@@ -1,0 +1,18 @@
+{
+  "name": "diagram-codes-engine-integration-library",
+  "version": "1.0.0",
+  "repository": "git@github.com:diagram-codes/diagram-codes-engine-integration-library.git",
+  "author": "Volare Labs",
+  "license": "MIT",
+  "source": "diagram-renderer.js", 
+  "main": "dist/diagram-codes-engine-client.js",           
+  "module": "dist/diagram-codes-engine-client.module.js",  
+  "unpkg": "dist/diagram-codes-engine-client.umd.js",      
+  "scripts": {
+    "build": "microbundle",        
+    "dev": "microbundle watch"    
+  },
+  "devDependencies": {
+    "microbundle": "^0.12.2"
+  }
+}
