@@ -3,7 +3,7 @@
 This repository contains the client library for embedding the
 Diagram Codes Engine into a Web Application.
 
-** An active integration subscription is required for using it **
+**An active integration subscription is required for using it**
 
 With an active integration subscription you will receive a custom URL for the render-service (can also be self hosted). 
 
