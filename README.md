@@ -41,6 +41,9 @@ let diagramParams = {
         random->${Math.random()*1000}
     `
 }
+
+DiagramEngine.renderDiagram(diagramParams)
+
 ```
 
 ![screenshot](assets/screenshot-example.png)
