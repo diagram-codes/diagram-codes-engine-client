@@ -37,7 +37,7 @@ let diagramParams = {
     container:'#container',
     type:'mind-map',
     code:`
-        a->b,c,d,e,random
+        "My Map"->b,c,d,e,random
         random->${Math.random()*1000}
     `
 }
