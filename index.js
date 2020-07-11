@@ -19,7 +19,7 @@ class DiagramEngine {
       @code: Diagram Code
       @theme: Diagram Theme
     */
-    static async renderDiagram({container,type,code,theme}){
+    static async renderDiagram({container,type,code,model,theme}){
         if(!DiagramEngine.enginePath){
             throw new Error("Diagram Engine path not set, use DiagramEngine.setEnginePath('path-to-engine')")
         }
@@ -37,6 +37,7 @@ class DiagramEngine {
             data:{
                 type,
                 code,
+                model,
                 theme
             }
         }, '*')
