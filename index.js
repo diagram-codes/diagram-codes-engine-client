@@ -29,9 +29,7 @@ class DiagramEngine {
         }
         //wait until we receive the 'ready'  message from the engine
         //only the 1st time
-        console.log('initContainer')
         const iframe = await DiagramEngine.initContainer(elem)
-        console.log('initContainer ends', iframe)
 
         //send the render message to the engine
         iframe.contentWindow.postMessage({
@@ -69,25 +67,71 @@ class DiagramEngine {
             iframe.setAttribute('diagram-renderer',"")
             iframe.src = DiagramEngine.enginePath
 
-            window.addEventListener('message', (ev)=>{
+            /* Creamos handler para esperar mensaje de ready del engine
+               cuando llegue resolvemos la promesa */
+            const handler = (ev)=>{
+
                 if(ev.data && ev.data.type === 'diagram-render-engine-ready'){
                     resolve(iframe);
                 }
-            })
+            }
+
+            DiagramEngine.addMessageHandler('diagram-render-engine-ready', iframe, handler, true)
             elem.appendChild(iframe)
         })
     }
+
+    /*  El padre puede recibir mensajes de diferentes iframes
+        usamos esta lista de handlers para que podamos ejecutar 
+        codigo sólo para mensajes de un iframe especifico */
+
+    static addMessageHandler(eventName, iframe, cb, once=false){
+        DiagramEngine.handlers.push({eventName, iframe, cb})
+    }
 }
 
-//Global error handler
+/* Llamamos el handler del iframe apropiado */
 window.addEventListener('message', (ev)=>{
-    console.log('message', ev)
-    if(ev.data && ev.data.type === 'diagram-render-error'){
-        if(DiagramEngine.globalErrorHandler) {
-            DiagramEngine.globalErrorHandler(ev.data);
+    if(ev.data && ev.data.type) {
+        let handler = DiagramEngine.handlers.find((h)=>{
+            //Verificar si el ifram del handler corresponde
+            //con la fuente de este evento
+            return h.eventName === ev.data.type &&
+                   h.iframe.contentWindow === ev.source
+        })
+
+        //Si hay un handler registrado para el iframe y el evento lo llamamos
+        //Si es un handler "once" lo quitamos de la lista
+        if(handler){
+            handler.cb(ev)
+            if(handler.once){
+                const ix = DiagramEngine.handlers.indexOf(handler)
+                DiagramEngine.handlers.splice(ix, 1)
+            }
         }
+   
+
+        //Ver si es un error para ejecutar el handler de error global
+        if(ev.data && ev.data.type === 'diagram-render-error'){
+            if(DiagramEngine.globalErrorHandler) {
+                DiagramEngine.globalErrorHandler(ev.data);
+            }
+        }
+
     }
 })
 
+//Global error handler
+// window.addEventListener('message', (ev)=>{
+//     console.log('message', ev)
+//     if(ev.data && ev.data.type === 'diagram-render-error'){
+//         if(DiagramEngine.globalErrorHandler) {
+//             DiagramEngine.globalErrorHandler(ev.data);
+//         }
+//     }
+// })
+
+
+DiagramEngine.handlers = [];
 
 export default DiagramEngine
