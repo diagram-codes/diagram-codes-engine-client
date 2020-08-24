@@ -49,16 +49,13 @@ class DiagramEngine {
     /* Creates an iframe inside the container
        The iframe will be 100% width and height of the container */
     static async init(elem){
-        console.log('(client lib) init called')
         return new Promise((resolve)=>{
             //Is already initialized? skip
             let iframe = elem.querySelector('iframe[diagram-renderer]')
             if(iframe){
-                 console.log('worker iframe found, removing it')
                  iframe.remove();
             }
 
-            console.log('creating iframe element')
 
             //clear container
             elem.innerHTML = '';
@@ -81,7 +78,6 @@ class DiagramEngine {
             const handler = (ev)=>{
 
                 if(ev.data && ev.data.type === 'diagram-render-engine-ready'){
-                    console.log('diagram-render-engine-ready recibido')
                     iframe.setAttribute('ready', "true")
                     resolve(iframe);
                 }
