@@ -29,7 +29,10 @@ class DiagramEngine {
         }
         //wait until we receive the 'ready'  message from the engine
         //only the 1st time
-        const iframe = await DiagramEngine.initContainer(elem)
+        const iframe = container.querySelector('iframe[diagram-renderer]');
+        if(!iframe){
+            throw new Error('Please call DiagramEngine.init(container) to initialize the engine first')
+        }
 
         //send the render message to the engine
         iframe.contentWindow.postMessage({
@@ -45,15 +48,17 @@ class DiagramEngine {
 
     /* Creates an iframe inside the container
        The iframe will be 100% width and height of the container */
-    static async initContainer(elem){
-
+    static async init(elem){
+        console.log('(client lib) init called')
         return new Promise((resolve)=>{
             //Is already initialized? skip
             let iframe = elem.querySelector('iframe[diagram-renderer]')
             if(iframe){
-                 resolve(iframe);
-                 return;
+                 console.log('worker iframe found, removing it')
+                 iframe.remove();
             }
+
+            console.log('creating iframe element')
 
             //clear container
             elem.innerHTML = '';
@@ -65,21 +70,29 @@ class DiagramEngine {
             iframe.style.minWidth = "400px";
             iframe.style.minHeight = "400px";
             iframe.setAttribute('diagram-renderer',"")
+            iframe.setAttribute('ready', "false")
             iframe.src = DiagramEngine.enginePath
 
             /* Creamos handler para esperar mensaje de ready del engine
-               cuando llegue resolvemos la promesa */
+               cuando llegue resolvemos la promesa.
+               Sólo cuando recibimos el evento ready se cumple
+               la promesa
+            */
             const handler = (ev)=>{
 
                 if(ev.data && ev.data.type === 'diagram-render-engine-ready'){
+                    console.log('diagram-render-engine-ready recibido')
+                    iframe.setAttribute('ready', "true")
                     resolve(iframe);
                 }
             }
 
             DiagramEngine.addMessageHandler('diagram-render-engine-ready', iframe, handler, true)
             elem.appendChild(iframe)
+
         })
     }
+
 
     /*  El padre puede recibir mensajes de diferentes iframes
         usamos esta lista de handlers para que podamos ejecutar 
