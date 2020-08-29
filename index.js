@@ -15,40 +15,54 @@ class DiagramEngine {
       @code: Diagram Code
       @theme: Diagram Theme
     */
-    static async renderDiagram({ container, type, code, theme }) {
-        if (!DiagramEngine.enginePath) {
-            throw new Error(
-                "Diagram Engine path not set, use DiagramEngine.setEnginePath('path-to-engine')"
-            );
-        }
-        let elem =
-            typeof container === "string"
-                ? document.querySelector(container)
-                : container;
-        if (!elem) {
-            throw new Error("Could not find container DOM element");
-        }
-        //wait until we receive the 'ready'  message from the engine
-        //only the 1st time
-        const iframe = container.querySelector("iframe[diagram-renderer]");
-        if (!iframe) {
-            throw new Error(
-                "Please call DiagramEngine.init(container) to initialize the engine first"
-            );
-        }
+    static renderDiagram({ container, type, code, theme }) {
+        return new Promise((resolve, reject) => {
+            if (!DiagramEngine.enginePath) {
+                throw new Error(
+                    "Diagram Engine path not set, use DiagramEngine.setEnginePath('path-to-engine')"
+                );
+            }
+            let elem =
+                typeof container === "string"
+                    ? document.querySelector(container)
+                    : container;
+            if (!elem) {
+                throw new Error("Could not find container DOM element");
+            }
+            //wait until we receive the 'ready'  message from the engine
+            //only the 1st time
+            const iframe = container.querySelector("iframe[diagram-renderer]");
+            if (!iframe) {
+                throw new Error(
+                    "Please call DiagramEngine.init(container) to initialize the engine first"
+                );
+            }
 
-        //send the render message to the engine
-        iframe.contentWindow.postMessage(
-            {
-                type: "render-diagram",
-                data: {
-                    type,
-                    code,
-                    theme,
+            const handlerDone = (ev) => {
+                resolve();
+            };
+
+            //Registrar handler para evento 'render-finished'
+            DiagramEngine.addMessageHandler(
+                "diagram-render-finished",
+                iframe,
+                handlerDone,
+                true
+            );
+
+            //send the render message to the engine
+            iframe.contentWindow.postMessage(
+                {
+                    type: "render-diagram",
+                    data: {
+                        type,
+                        code,
+                        theme,
+                    },
                 },
-            },
-            "*"
-        );
+                "*"
+            );
+        });
     }
 
     /* Creates an iframe inside the container
