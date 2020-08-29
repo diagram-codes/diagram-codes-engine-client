@@ -125,7 +125,7 @@ class DiagramEngine {
             };
             //Register the handler for the response (with once=true)
             DiagramEngine.addMessageHandler(
-                "diagram-render-engine-ready",
+                "rendered-svg-response",
                 iframe,
                 handler,
                 true
