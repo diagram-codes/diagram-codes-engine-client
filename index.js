@@ -146,7 +146,7 @@ class DiagramEngine {
         codigo sólo para mensajes de un iframe especifico */
 
     static addMessageHandler(eventName, iframe, cb, once = false) {
-        DiagramEngine.handlers.push({ eventName, iframe, cb });
+        DiagramEngine.handlers.push({ eventName, iframe, cb, once });
     }
 }
 
