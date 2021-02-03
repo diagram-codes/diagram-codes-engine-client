@@ -2184,7 +2184,7 @@ destroy@~1.0.4:
   integrity sha1-l4hXRCxEdJ5CBmE+N5RiBYJqvYA=
 
 "diagram-codes-engine-client@file:./..":
-  version "1.0.12"
+  version "1.0.13"
   dependencies:
     uuid "^8.3.2"
 
