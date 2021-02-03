@@ -1,0 +1,13 @@
+{
+    "name": "test",
+    "scripts": {
+        "dev": "parcel index.html"
+    },
+    "dependencies": {
+        "diagram-codes-engine-client": "file:./.."
+    },
+    "devDependencies": {
+        "microbundle": "^0.12.2",
+        "parcel-bundler": "^1.12.4"
+    }
+}

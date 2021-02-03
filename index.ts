@@ -1,4 +1,22 @@
+/* Diagram Codes Web Client
+   Creates an Iframe and communicates with the engine through messages
+   
+*/
+const { v4: uuidv4 } = require('uuid');
+
+//Additional width and height added to the IFRAME (to account for margins)
+const IFRAME_MARGIN = 10;
+
+export interface InitResult {
+    iframe: HTMLIFrameElement,
+    instanceId: string
+}
+
 class DiagramEngine {
+    static enginePath: any;
+    static globalErrorHandler: any;
+    static handlers: any;
+
     constructor() {}
 
     static setEnginePath(path) {
@@ -9,6 +27,58 @@ class DiagramEngine {
         DiagramEngine.globalErrorHandler = cb;
     }
 
+
+    /* Creates an iframe inside the container
+       The iframe will be 100% width and height of the container */
+       static async init(elem) {
+        console.log('client: init called for element:', elem)
+        return new Promise<InitResult>((resolve) => {
+            
+            
+            let iframe = elem.querySelector("iframe[diagram-renderer]");
+            //Remove and recreate the iframe if init is called more than once
+            if (iframe) {
+                iframe.remove();
+            }
+
+            
+            const instanceId = uuidv4();
+
+            //clear container
+            elem.innerHTML = "";
+
+            iframe = document.createElement("iframe");
+            iframe.setAttribute('data-diagram-id', instanceId);
+            iframe.style.border = "none";
+            iframe.setAttribute("diagram-renderer", "");
+            iframe.setAttribute("ready", "false");
+            iframe.src = DiagramEngine.enginePath;
+
+            /* Creamos handler para esperar mensaje de ready del engine
+               cuando llegue resolvemos la promesa.
+               Sólo cuando recibimos el evento ready se cumple
+               la promesa
+            */
+            const handler = (ev) => {
+                console.log('debug: event received:', ev)
+                if (ev.data && ev.data.type === "diagram-render-engine-ready") {
+                    console.log('Diagram instance initialized:', instanceId)
+                    iframe.setAttribute("ready", "true");
+                    resolve({iframe, instanceId});
+                }
+            };
+
+            DiagramEngine.addMessageHandler(
+                "diagram-render-engine-ready",
+                iframe,
+                handler,
+                true
+            );
+            elem.appendChild(iframe);
+        });
+    }
+
+
     /*
       @container: CSS selector or DOM element
       @type: Diagram type identifier
@@ -16,7 +86,8 @@ class DiagramEngine {
       @theme: Diagram Theme
     */
     static renderDiagram({ container, type, code, theme }) {
-        return new Promise((resolve, reject) => {
+        console.log('inside renderDiagram')
+        return new Promise<void>((resolve, reject) => {
             if (!DiagramEngine.enginePath) {
                 throw new Error(
                     "Diagram Engine path not set, use DiagramEngine.setEnginePath('path-to-engine')"
@@ -31,14 +102,27 @@ class DiagramEngine {
             }
             //wait until we receive the 'ready'  message from the engine
             //only the 1st time
-            const iframe = container.querySelector("iframe[diagram-renderer]");
+            const iframe = elem.querySelector("iframe[diagram-renderer]");
             if (!iframe) {
                 throw new Error(
                     "Please call DiagramEngine.init(container) to initialize the engine first"
                 );
             }
 
+            const id = iframe.getAttribute('data-diagram-id')
+            if(!id){
+                throw new Error('No data-diagram-id found on iframe')
+            }
             const handlerDone = (ev) => {
+                /* Necesitamos actualizar las dimensiones del iframe para que corresponsan con las del svg */
+                const size = ev.data.data.size;
+                if(!size){
+                    throw new Error('Diagram size not returned')
+                }
+                //Tenemos el width y height, actualizamos dimensiones del iframe
+                iframe.style.width = `${size.width + IFRAME_MARGIN}px`;
+                iframe.style.height = `${size.height + IFRAME_MARGIN}px`;
+                
                 resolve();
             };
 
@@ -50,65 +134,25 @@ class DiagramEngine {
                 true
             );
 
+            const msg = {
+                type: "render-diagram",
+                data: {
+                    id,
+                    type,
+                    code,
+                    theme,
+                },
+            }
+            console.log('posting message to iframe:', iframe, msg);
+
             //send the render message to the engine
             iframe.contentWindow.postMessage(
-                {
-                    type: "render-diagram",
-                    data: {
-                        type,
-                        code,
-                        theme,
-                    },
-                },
+                msg,
                 "*"
             );
         });
     }
 
-    /* Creates an iframe inside the container
-       The iframe will be 100% width and height of the container */
-    static async init(elem) {
-        return new Promise((resolve) => {
-            //Is already initialized? skip
-            let iframe = elem.querySelector("iframe[diagram-renderer]");
-            if (iframe) {
-                iframe.remove();
-            }
-
-            //clear container
-            elem.innerHTML = "";
-
-            iframe = document.createElement("iframe");
-            iframe.style.width = "100%";
-            iframe.style.height = "100%";
-            iframe.style.border = "none";
-            iframe.style.minWidth = "400px";
-            iframe.style.minHeight = "400px";
-            iframe.setAttribute("diagram-renderer", "");
-            iframe.setAttribute("ready", "false");
-            iframe.src = DiagramEngine.enginePath;
-
-            /* Creamos handler para esperar mensaje de ready del engine
-               cuando llegue resolvemos la promesa.
-               Sólo cuando recibimos el evento ready se cumple
-               la promesa
-            */
-            const handler = (ev) => {
-                if (ev.data && ev.data.type === "diagram-render-engine-ready") {
-                    iframe.setAttribute("ready", "true");
-                    resolve(iframe);
-                }
-            };
-
-            DiagramEngine.addMessageHandler(
-                "diagram-render-engine-ready",
-                iframe,
-                handler,
-                true
-            );
-            elem.appendChild(iframe);
-        });
-    }
 
     static getSvg({ container }) {
         return new Promise((resolve) => {
@@ -152,6 +196,7 @@ class DiagramEngine {
 
 /* Llamamos el handler del iframe apropiado */
 window.addEventListener("message", (ev) => {
+    console.log('client message received:', ev);
     if (ev.data && ev.data.type) {
         let handler = DiagramEngine.handlers.find((h) => {
             //Verificar si el ifram del handler corresponde
