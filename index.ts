@@ -120,8 +120,8 @@ class DiagramEngine {
                     throw new Error('Diagram size not returned')
                 }
                 //Tenemos el width y height, actualizamos dimensiones del iframe
-                iframe.style.width = `${size.width + IFRAME_MARGIN}px`;
-                iframe.style.height = `${size.height + IFRAME_MARGIN}px`;
+                iframe.style.width = `${size.width + IFRAME_MARGIN*2}px`;
+                iframe.style.height = `${size.height + IFRAME_MARGIN*2}px`;
                 
                 resolve();
             };
